@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- SEO -->
+    <title>talk.souravtripathy.com</title>
+    <meta name="description"
+        content="A personal chat interface backed by a language model running on an old NVIDIA GeForce GTX 1650 4GB GPU, served via FastAPI and vLLM." />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://talk.souravtripathy.com/" />
+
+    <!-- Fonts — matching souravtripathy.com -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Spectral:ital,wght@0,400;1,400&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <div id="app">
+
+        <!-- ▸ Header ──────────────────────────────────────────────────────────── -->
+        <header>
+            <div class="header-left">
+                <button id="sidebar-toggle" aria-label="Toggle info panel">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round">
+                        <line x1="3" y1="6" x2="21" y2="6" />
+                        <line x1="3" y1="12" x2="21" y2="12" />
+                        <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                </button>
+
+                <h1 class="site-title">
+                    talk.souravtripathy.com
+                    <a href="https://souravtripathy.com" target="_blank" rel="noopener" title="Main site">←
+                        souravtripathy.com</a>
+                </h1>
+            </div>
+
+            <div class="status-group" aria-live="polite">
+                <span id="status-dot" class="status-dot" role="img" aria-label="Status"></span>
+                <span id="status-label">checking…</span>
+            </div>
+        </header>
+
+        <!-- ▸ Main ────────────────────────────────────────────────────────────── -->
+        <main>
+
+            <!-- ── Sidebar ────────────────────────────────────────────────────── -->
+            <aside id="sidebar" aria-label="About this project">
+
+                <div class="sidebar-block">
+                    <p class="sidebar-label">what this is</p>
+                    <p class="sidebar-prose">
+                        A language model running on an old NVIDIA GeForce GTX 1650 Ti 4GB GPU,
+                        somewhere on my desk.<br><br>
+                        It uses a FastAPI server and vLLM for inference.<br><br>
+                        That's it.
+                    </p>
+                </div>
+
+                <hr class="sidebar-divider" />
+
+                <div class="sidebar-block">
+                    <table class="spec-table" aria-label="Stack">
+                        <tbody>
+                            <tr>
+                                <td>model</td>
+                                <td>Qwen2.5-0.5B</td>
+                            </tr>
+                            <tr>
+                                <td>gpu</td>
+                                <td>GTX 1650 Ti 4GB</td>
+                            </tr>
+                            <tr>
+                                <td>serving</td>
+                                <td>vLLM + FastAPI</td>
+                            </tr>
+                            <tr>
+                                <td>frontend</td>
+                                <td>Cloudflare Pages</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="offline-notice" id="offline-notice">
+                    <hr class="sidebar-divider" />
+                    if it's offline — the laptop is either shut down or not connected
+                    to the internet. mostly online between 10 am and 5 pm.
+                </div>
+
+            </aside>
+
+            <!-- ── Chat area ───────────────────────────────────────────────────── -->
+            <section id="chat-area" aria-label="Chat">
+
+                <div id="chat-log" role="log" aria-live="polite">
+                    <div class="empty-state" id="empty-state">
+                        <p class="empty-state-title">say something.</p>
+                        <p class="empty-state-sub">running on old hardware. may be slow.</p>
+                    </div>
+                </div>
+
+                <div id="metrics-bar" aria-label="Inference metrics" role="status"></div>
+
+                <div id="input-row">
+                    <textarea id="chat-input" rows="1" placeholder="type something…" aria-label="Message"
+                        autocomplete="off" spellcheck="true"></textarea>
+
+                    <button id="send-btn" aria-label="Send">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="22" y1="2" x2="11" y2="13" />
+                            <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                        </svg>
+                    </button>
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <script type="module" src="app.js"></script>
+
+    <script type="module">
+        // Remove empty state on first send
+        const sendBtn = document.getElementById("send-btn");
+        const inputEl = document.getElementById("chat-input");
+        const emptyEl = document.getElementById("empty-state");
+
+        function hideEmpty() {
+            emptyEl?.remove();
+        }
+        sendBtn.addEventListener("click", hideEmpty, { once: true });
+        inputEl.addEventListener("keydown", e => {
+            if (e.key === "Enter" && !e.shiftKey) hideEmpty();
+        }, { once: true });
+    </script>
+
+</body>
+
+</html>

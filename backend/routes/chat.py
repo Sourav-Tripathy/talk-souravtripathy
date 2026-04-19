@@ -1,0 +1,44 @@
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from services.vllm_client import generate_stream
+from services.mongo_service import save_turn
+from services.logger import log_inference
+import json
+import asyncio
+
+router = APIRouter()
+
+
+class ChatRequest(BaseModel):
+    message: str
+    session_id: str
+
+
+@router.post("/chat")
+async def chat(req: ChatRequest):
+    """Main inference endpoint — streams the response text using SSE."""
+    if not req.message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty.")
+
+    async def stream_generator():
+        full_text = ""
+        metrics = None
+        
+        # Simple ChatML formatting to give the model a system instruction.
+        system_message = "You are a helpful, respectful, and honest AI assistant. Always answer as helpfully as possible, while being concise."
+        formatted_prompt = f"<|im_start|>system\n{system_message}<|im_end|>\n<|im_start|>user\n{req.message}<|im_end|>\n<|im_start|>assistant\n"
+        
+        async for chunk in generate_stream(formatted_prompt):
+            if chunk["type"] == "token":
+                yield f"data: {json.dumps(chunk)}\n\n"
+            elif chunk["type"] == "metrics":
+                full_text = chunk["full_text"]
+                metrics = chunk["content"]
+                yield f"data: {json.dumps(chunk)}\n\n"
+                
+        # Persist asynchronously after generation completes
+        asyncio.create_task(save_turn(req.session_id, req.message, full_text))
+        log_inference(req.message, full_text, metrics)
+
+    return StreamingResponse(stream_generator(), media_type="text/event-stream")

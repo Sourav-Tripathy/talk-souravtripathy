@@ -1,0 +1,29 @@
+from fastapi import FastAPI
+from middleware.cors import add_cors
+from routes.chat import router as chat_router
+from routes.health import router as health_router
+import uvicorn
+import config
+
+app = FastAPI(
+    title="talk.souravtripathy.com backend",
+    description=(
+        "FastAPI wrapper around a vLLM-served 500M parameter language model "
+        "running on a home old GPU(NVDIA-GEFORCE-GTX-1650-4GB)"
+    ),
+    version="1.0.0",
+)
+
+add_cors(app)
+
+app.include_router(chat_router)
+app.include_router(health_router)
+
+if __name__ == "__main__":
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=config.PORT,
+        reload=False,       # reload must be False — vLLM engine for some reason crashing on reload
+        log_level="info",
+    )
