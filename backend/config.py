@@ -6,7 +6,7 @@ load_dotenv()
 # ── Model ─────────────────────────────────────────────────────────────────────
 MODEL_PATH: str = os.getenv("MODEL_PATH", "./model")
 MAX_MODEL_LEN: int = 2048
-GPU_MEMORY_UTILIZATION: float = 0.90
+GPU_MEMORY_UTILIZATION: float = 0.80
 DTYPE: str = "float16"
 
 # ── Inference defaults ────────────────────────────────────────────────────────
