@@ -20,6 +20,12 @@ const inputEl = document.getElementById("chat-input");
 const sendBtn = document.getElementById("send-btn");
 const metricsEl = document.getElementById("metrics-bar");
 
+// Logs DOM
+const logsToggle = document.getElementById("Logs-toggle") || document.getElementById("logs-toggle");
+const logsPanel = document.getElementById("logs-panel");
+const logsContent = document.getElementById("logs-content");
+const logsEmpty = document.getElementById("logs-empty-state");
+
 // ─── Status ──────────────────────────────────────────────────────────────────
 function setStatus(state) {
     if (state === "online") {
@@ -115,7 +121,7 @@ async function sendMessage() {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ message: text, session_id: SESSION_ID }),
             // Give enough timeout for streaming responses
-            signal: AbortSignal.timeout(120_000), 
+            signal: AbortSignal.timeout(120_000),
         });
 
         thinkEl.remove();
@@ -142,27 +148,27 @@ async function sendMessage() {
         while (!done) {
             const { value, done: readerDone } = await reader.read();
             done = readerDone;
-            
+
             if (value) {
                 partialText += decoder.decode(value, { stream: true });
                 const lines = partialText.split("\n");
-                
+
                 // Keep the last incomplete line in the buffer
-                partialText = lines.pop(); 
+                partialText = lines.pop();
 
                 for (const line of lines) {
                     if (line.startsWith("data: ")) {
                         const payload = JSON.parse(line.slice(6));
-                        
+
                         if (payload.type === "token") {
                             fullMarkdown += payload.content;
-                            
+
                             // Re-render the chat bubble markdown progressively
                             const escaped = fullMarkdown
                                 .replace(/&/g, "&amp;")
                                 .replace(/</g, "&lt;")
                                 .replace(/>/g, "&gt;");
-                                
+
                             bubble.innerHTML = escaped.replace(
                                 /```([\s\S]*?)```/g,
                                 (_, code) => `<pre><code>${code.trim()}</code></pre>`
@@ -209,4 +215,39 @@ const sidebar = document.getElementById("sidebar");
 
 sidebarToggle?.addEventListener("click", () => {
     sidebar.classList.toggle("open");
+    logsPanel.classList.remove("open");
 });
+
+// ─── Logs Panel ───────────────────────────────────────────────────────────────
+logsToggle?.addEventListener("click", () => {
+    logsPanel.classList.toggle("open");
+    sidebar.classList.remove("open");
+});
+
+// Setup Live Logs stream
+const logsSource = new EventSource(`${BACKEND_URL}/logs/stream`);
+logsSource.onmessage = (event) => {
+    if (logsEmpty) {
+        logsEmpty.remove();
+    }
+    const logText = event.data;
+    if (!logText) return;
+
+    const entry = document.createElement("div");
+    entry.className = "log-entry";
+    if (logText.toLowerCase().includes("error") || logText.toLowerCase().includes("exception")) {
+        entry.classList.add("error");
+    }
+    entry.textContent = logText;
+
+    logsContent.appendChild(entry);
+
+    // Auto-scroll to bottom if near bottom
+    if (logsContent.scrollHeight - logsContent.scrollTop - logsContent.clientHeight < 100) {
+        logsContent.scrollTop = logsContent.scrollHeight;
+    }
+};
+
+logsSource.onerror = () => {
+    // silently reconnects by default
+};

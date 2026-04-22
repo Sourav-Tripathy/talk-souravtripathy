@@ -20,12 +20,12 @@ DB_NAME: str = "talk_sourav"
 COLLECTION_NAME: str = "conversations"
 
 # ── Server ────────────────────────────────────────────────────────────────────
-PORT: int = int(os.getenv("PORT", "8000"))
+PORT: int = int(os.getenv("PORT", "5000"))
 ALLOWED_ORIGINS: list[str] = [
     "https://talk.souravtripathy.com",
     # uncomment during local dev:
-    "http://localhost:5000",
-    "http://127.0.0.1:5000",
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
 ]
 
 # ── Logging ───────────────────────────────────────────────────────────────────

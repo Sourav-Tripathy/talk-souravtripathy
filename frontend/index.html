@@ -48,6 +48,13 @@
             <div class="status-group" aria-live="polite">
                 <span id="status-dot" class="status-dot" role="img" aria-label="Status"></span>
                 <span id="status-label">checking…</span>
+                <button id="logs-toggle" class="icon-btn" aria-label="Toggle logs panel" title="View Logs">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                        <line x1="4" y1="6" x2="20" y2="6" />
+                        <line x1="4" y1="12" x2="20" y2="12" />
+                        <line x1="4" y1="18" x2="14" y2="18" />
+                    </svg>
+                </button>
             </div>
         </header>
 
@@ -126,6 +133,18 @@
                 </div>
 
             </section>
+
+            <!-- ── Logs Panel ─────────────────────────────────────────────────── -->
+            <aside id="logs-panel" aria-label="Live logs">
+                <div class="logs-header">
+                    <span class="logs-title">System & vLLM Logs</span>
+                </div>
+                <div id="logs-content" role="log" aria-live="polite">
+                    <div class="empty-state" id="logs-empty-state">
+                        <p class="empty-state-sub">Waiting for logs...</p>
+                    </div>
+                </div>
+            </aside>
 
         </main>
 

@@ -25,7 +25,6 @@ async def chat(req: ChatRequest):
         full_text = ""
         metrics = None
         
-        # Simple ChatML formatting to give the model a system instruction.
         system_message = "You are a helpful, respectful, and honest AI assistant. Always answer as helpfully as possible, while being concise."
         formatted_prompt = f"<|im_start|>system\n{system_message}<|im_end|>\n<|im_start|>user\n{req.message}<|im_end|>\n<|im_start|>assistant\n"
         

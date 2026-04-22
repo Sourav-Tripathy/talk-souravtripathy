@@ -1,10 +1,43 @@
 import os
-
 from vllm import AsyncLLMEngine, AsyncEngineArgs, SamplingParams
 import uuid
 import torch
 import time
 import config
+
+def print_memory_stats(label: str, func_name: str):
+    print("\n" + "=" * 60)
+    print(f"[{func_name}] -> {label}")
+    print("-" * 60)
+    
+    # CPU Memory
+    cpu_mem_mb = 0.0
+    try:
+        with open('/proc/self/status', 'r') as f:
+            for line in f:
+                if line.startswith('VmRSS:'):
+                    cpu_mem_mb = float(line.split()[1]) / 1024.0
+                    break
+    except Exception:
+        pass
+    print(f"[CPU] Current RSS Memory: {cpu_mem_mb:.2f} MB")
+    
+    # GPU Memory
+    if torch.cuda.is_available():
+        gpu_mem_all_mb = torch.cuda.memory_allocated() / (1024 * 1024)
+        gpu_mem_res_mb = torch.cuda.memory_reserved() / (1024 * 1024)
+        print(f"[GPU] Memory Allocated:   {gpu_mem_all_mb:.2f} MB")
+        print(f"[GPU] Memory Reserved:    {gpu_mem_res_mb:.2f} MB")
+        try:
+            free_mem, total_mem = torch.cuda.mem_get_info()
+            print(f"[GPU] Free Memory:        {free_mem / (1024*1024):.2f} MB")
+            print(f"[GPU] Total VRAM:         {total_mem / (1024*1024):.2f} MB")
+        except Exception:
+            pass
+    else:
+        print("[GPU] CUDA not available")
+    print("=" * 60 + "\n")
+
 
 ENGINE_ARGS = AsyncEngineArgs(
     model=config.MODEL_PATH,
@@ -19,9 +52,27 @@ ENGINE_ARGS = AsyncEngineArgs(
     enforce_eager=True,
 )
 
-# Engine is initialised once at import time (module-level singleton).
-# vLLM handles paged attention, KV cache, and async batching internally.
-engine = AsyncLLMEngine.from_engine_args(ENGINE_ARGS)
+# Engine is initialised explicitly via init_engine(). it is because we are intilaizing CUDA and pytorch says to use spawn and when using spawn if we donot call after parent process start rather intialize directly while fastapi server is starting, it will crash because of CUDA initialization in the parent process. By calling init_engine() after the server starts, we ensure that CUDA is initialized in the child process where it is needed, avoiding the crash and allowing the engine to function properly. This approach also allows us to control when the engine is initialized, which can be beneficial for resource management and debugging.
+engine = None
+
+def init_engine():
+    global engine
+    if engine is not None:
+        return
+    
+    print_memory_stats("BEFORE Engine Initialization", "init_engine")
+    try:
+        engine = AsyncLLMEngine.from_engine_args(ENGINE_ARGS)
+        print_memory_stats("AFTER Engine Initialization (SUCCESS)", "init_engine")
+    except Exception as e:
+        print_memory_stats("CRASH during Engine Initialization", "init_engine")
+        print(f"Exception details: {e}")
+        raise
+
+def get_engine():
+    if engine is None:
+        raise RuntimeError("Engine not initialized")
+    return engine
 
 
 async def generate_stream(prompt: str):
@@ -29,6 +80,9 @@ async def generate_stream(prompt: str):
     Run async generation via vLLM and stream tokens back.
     Yields JSON chunks containing either tokens or final metrics.
     """
+    if engine is None:
+        raise RuntimeError("vLLM engine is not initialized. Call init_engine() first.")
+
     sampling_params = SamplingParams(
         temperature=config.TEMPERATURE,
         max_tokens=config.MAX_TOKENS,
@@ -40,6 +94,8 @@ async def generate_stream(prompt: str):
     t0 = time.perf_counter()
     vram_before = torch.cuda.memory_allocated() if torch.cuda.is_available() else 0
 
+    print_memory_stats("START of text generation", "generate_stream")
+
     full_output = ""
     async for output in engine.generate(prompt, sampling_params, request_id):
         if output.outputs:
@@ -50,6 +106,8 @@ async def generate_stream(prompt: str):
 
     elapsed = time.perf_counter() - t0
     vram_after = torch.cuda.memory_allocated() if torch.cuda.is_available() else 0
+
+    print_memory_stats("END of text generation", "generate_stream")
 
     metrics = {
         "latency_ms": round(elapsed * 1000, 2),

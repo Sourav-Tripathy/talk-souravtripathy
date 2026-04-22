@@ -2,6 +2,9 @@ from fastapi import FastAPI
 from middleware.cors import add_cors
 from routes.chat import router as chat_router
 from routes.health import router as health_router
+from routes.logs import router as logs_router
+from services.vllm_client import init_engine
+from services.mongo_service import init_mongo
 import uvicorn
 import config
 
@@ -14,10 +17,16 @@ app = FastAPI(
     version="1.0.0",
 )
 
+@app.on_event("startup")
+async def startup_event():
+    init_mongo()
+    init_engine()
+
 add_cors(app)
 
 app.include_router(chat_router)
 app.include_router(health_router)
+app.include_router(logs_router)
 
 if __name__ == "__main__":
     uvicorn.run(
