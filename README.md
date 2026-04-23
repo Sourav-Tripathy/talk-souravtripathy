@@ -1,6 +1,6 @@
 # talk.souravtripathy.com
 
-This project is a personal endeavor to keep my old NVIDIA GeForce GTX 1650 Ti busy, since it sits idle most of the time in my laptop. It is an attempt to host a 500M parameter Qwen model via vLLM, wrapped in a FastAPI server.
+This project is a personal endeavor to keep my old NVIDIA GeForce GTX 1650 Ti busy, since it sits idle most of the time in my laptop. It is an attempt to host a 500M parameter Qwen model via vLLM, wrapped in a FastAPI server. The frontend is written with the help of gemini 3.1 pro.
 
 ## Current Status
 The backend **works**,When the server is locally on and is served via Cloudflare Tunneling. The current memory footprint has about nearly 2 GiB for KV cache which is used by vLLM with paged attention and with a prefill of 2048 Tokens it can serve more than 50 concurrent calls of each 2048 tokens with a decent TPS .

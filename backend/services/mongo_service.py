@@ -2,7 +2,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime, timezone
 import config
 
-# Motor client is a module-level singleton (thread-safe, async-safe).
 _client: AsyncIOMotorClient | None = None
 
 def init_mongo():
