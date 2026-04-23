@@ -3,9 +3,9 @@
 This project is a personal endeavor to keep my old NVIDIA GeForce GTX 1650 Ti busy, since it sits idle most of the time in my laptop. It is an attempt to host a 500M parameter Qwen model via vLLM, wrapped in a FastAPI server.
 
 ## Current Status
-The backend **works**, but is currently suffering from bloat or inefficiency. This occasionally makes the laptop freeze and sometimes throws Out-Of-Memory (OOM) errors during concurrent calls. Given the specifications of a 1650 Ti with a 500M model, it should easily handle 4-5 concurrent calls without OOMing. Active optimizations and bug fixes are planned.
+The backend **works**,When the server is locally on and is served via Cloudflare Tunneling. The current memory footprint has about nearly 2 GiB for KV cache which is used by vLLM with paged attention and with a prefill of 2048 Tokens it can serve more than 50 concurrent calls of each 2048 tokens with a decent TPS .
 
-Once stabilized and fixed, the project will be hosted live at [talk.souravtripathy.com](https://talk.souravtripathy.com).
+The project is hosted live at [talk.souravtripathy.com](https://talk.souravtripathy.com).
 
 ## vLLM Configuration
 Because the GTX 1650 Ti has a Turing generation architecture (Compute Capability 7.5), it lacks support for certain modern optimized kernels like FlashAttention 2 or FlashInfer. The vLLM setup has been configured to work around these limitations:
