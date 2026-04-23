@@ -1,9 +1,4 @@
-"""
-CORS middleware configuration.
 
-During development, add localhost origins to config.ALLOWED_ORIGINS.
-In production only talk.souravtripathy.com is allowed.
-"""
 from fastapi.middleware.cors import CORSMiddleware
 from config import ALLOWED_ORIGINS
 
