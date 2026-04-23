@@ -6,6 +6,7 @@ from services.mongo_service import save_turn
 from services.logger import log_inference
 import json
 import asyncio
+import time
 
 router = APIRouter()
 
@@ -24,7 +25,8 @@ async def chat(req: ChatRequest):
     async def stream_generator():
         full_text = ""
         metrics = None
-        
+        start_time = time.perf_counter()
+
         system_message = "You are a helpful, respectful, and honest AI assistant. Always answer as helpfully as possible, while being concise."
         formatted_prompt = f"<|im_start|>system\n{system_message}<|im_end|>\n<|im_start|>user\n{req.message}<|im_end|>\n<|im_start|>assistant\n"
         
@@ -34,8 +36,9 @@ async def chat(req: ChatRequest):
             elif chunk["type"] == "metrics":
                 full_text = chunk["full_text"]
                 metrics = chunk["content"]
+                metrics["elapsed_time"] = round(time.perf_counter() - start_time, 2)
                 yield f"data: {json.dumps(chunk)}\n\n"
-                
+
         # Persist asynchronously after generation completes
         asyncio.create_task(save_turn(req.session_id, req.message, full_text))
         log_inference(req.message, full_text, metrics)

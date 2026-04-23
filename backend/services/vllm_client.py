@@ -113,8 +113,10 @@ async def generate_stream(prompt: str):
         "latency_ms": round(elapsed * 1000, 2),
         "vram_delta_mb": round((vram_after - vram_before) / 1e6, 2),
         "vram_used_mb": round(vram_after / 1e6, 2),
-        # Rough token estimate — tokenizer-accurate count can be added later.
         "prompt_tokens": len(prompt.split()),
+        "output_tokens": len(full_output.split()) - len(prompt.split()),
+        "total_tokens": len(full_output.split()),
+        "tokens_per_second": round(len(full_output.split()) / elapsed, 2),
     }
 
     yield {"type": "metrics", "content": metrics, "full_text": full_output.strip()}
