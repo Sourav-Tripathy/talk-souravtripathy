@@ -8,18 +8,18 @@
 }
 
 :root {
-    /* ── Palette — matches souravtripathy.com night mode ───────────────────── */
-    --bg: #0c1f16;
-    --bg-raise: #112318;
-    --bg-surface: #162c1e;
-    --border: #1e3828;
-    --text: #d4e8dc;
-    --text-muted: #7a9a87;
-    --text-faint: #2e4c3c;
-    --accent: #d4e8dc;
-    /* same mint-white — links/highlights */
-    --accent-dim: rgba(212, 232, 220, 0.08);
-    --accent-pulse: rgba(212, 232, 220, 0.35);
+    /* ── Palette — Warm White & Coffee ─────────────────────────────────────── */
+    --bg: #fbf9f6;
+    --bg-raise: #eeeae0;
+    --bg-surface: #f5f1e8;
+    --border: #e0d6c8;
+    --text: #3c2a21;
+    --text-muted: #6b5548;
+    --text-faint: #a6968c;
+    --accent: #3c2a21;
+    /* highlights */
+    --accent-dim: rgba(60, 42, 33, 0.08);
+    --accent-pulse: rgba(60, 42, 33, 0.35);
     --green-glow: rgba(72, 187, 112, 0.18);
 
     /* ── Typography ────────────────────────────────────────────────────────── */
@@ -412,7 +412,7 @@ body.offline .offline-notice {
 .message.user .bubble {
     background: var(--accent-dim);
     color: var(--text);
-    border: 1px solid rgba(212, 232, 220, 0.12);
+    border: 1px solid rgba(60, 42, 33, 0.12);
     border-bottom-right-radius: 2px;
     font-family: var(--font-mono);
 }
@@ -438,7 +438,7 @@ body.offline .offline-notice {
 .bubble code {
     font-family: var(--font-mono);
     font-size: 0.76rem;
-    color: #8ecfa8;
+    color: #6b5548;
 }
 
 /* Thinking dots */
@@ -523,7 +523,7 @@ body.offline .offline-notice {
 }
 
 #chat-input:focus {
-    border-color: rgba(212, 232, 220, 0.3);
+    border-color: rgba(60, 42, 33, 0.3);
 }
 
 #send-btn {
@@ -543,7 +543,7 @@ body.offline .offline-notice {
 
 #send-btn:hover:not(:disabled) {
     color: var(--text);
-    border-color: rgba(212, 232, 220, 0.3);
+    border-color: rgba(60, 42, 33, 0.3);
 }
 
 #send-btn:active:not(:disabled) {
