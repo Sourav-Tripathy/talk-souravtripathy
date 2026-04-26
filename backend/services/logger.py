@@ -45,8 +45,6 @@ def log_inference(prompt: str, response: str, metrics: dict) -> None:
     """
     entry = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "prompt_preview": prompt[:80],
-        "response_preview": response[:80],
         "latency_ms": metrics.get("latency_ms"),
         "vram_used_mb": metrics.get("vram_used_mb"),
         "vram_delta_mb": metrics.get("vram_delta_mb"),

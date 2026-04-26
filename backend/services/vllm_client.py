@@ -97,7 +97,9 @@ async def generate_stream(prompt: str):
     print_memory_stats("START of text generation", "generate_stream")
 
     full_output = ""
+    last_output = None
     async for output in engine.generate(prompt, sampling_params, request_id):
+        last_output = output
         if output.outputs:
             new_text = output.outputs[0].text[len(full_output):]
             if new_text:
@@ -109,14 +111,18 @@ async def generate_stream(prompt: str):
 
     print_memory_stats("END of text generation", "generate_stream")
 
+    prompt_tokens = len(last_output.prompt_token_ids) if last_output else len(prompt.split())
+    output_tokens = len(last_output.outputs[0].token_ids) if last_output and last_output.outputs else len(full_output.split())
+    total_tokens = prompt_tokens + output_tokens
+
     metrics = {
         "latency_ms": round(elapsed * 1000, 2),
         "vram_delta_mb": round((vram_after - vram_before) / 1e6, 2),
         "vram_used_mb": round(vram_after / 1e6, 2),
-        "prompt_tokens": len(prompt.split()),
-        "output_tokens": len(full_output.split()) - len(prompt.split()),
-        "total_tokens": len(full_output.split()),
-        "tokens_per_second": round(len(full_output.split()) / elapsed, 2),
+        "prompt_tokens": prompt_tokens,
+        "output_tokens": output_tokens,
+        "total_tokens": total_tokens,
+        "tokens_per_second": round(output_tokens / elapsed, 2) if elapsed > 0 else 0,
     }
 
     yield {"type": "metrics", "content": metrics, "full_text": full_output.strip()}

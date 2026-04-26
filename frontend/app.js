@@ -96,9 +96,9 @@ function renderThinking() {
 }
 
 function updateMetrics(metrics) {
-    if (!metrics) return;
-    metricsEl.textContent =
-        `${metrics.latency_ms} ms · ${metrics.vram_used_mb} MB VRAM · ~${metrics.prompt_tokens} tokens`;
+    if (!metrics || !metricsEl) return;
+    metricsEl.style.display = "";
+    metricsEl.textContent = `${metrics.latency_ms} ms · ${metrics.output_tokens} tokens · ${metrics.tokens_per_second} t/s`;
     metricsEl.style.opacity = "1";
 }
 
@@ -204,10 +204,24 @@ inputEl.addEventListener("keydown", (e) => {
 });
 
 // Auto-resize textarea
-inputEl.addEventListener("input", () => {
+function adjustInputHeight() {
     inputEl.style.height = "auto";
     inputEl.style.height = `${Math.min(inputEl.scrollHeight, 160)}px`;
+}
+inputEl.addEventListener("input", adjustInputHeight);
+
+let lastChatAreaWidth = 0;
+const resizeObserver = new ResizeObserver((entries) => {
+    for (let entry of entries) {
+        if (entry.contentRect.width !== lastChatAreaWidth) {
+            lastChatAreaWidth = entry.contentRect.width;
+            if (inputEl.value) {
+                adjustInputHeight();
+            }
+        }
+    }
 });
+resizeObserver.observe(document.getElementById("chat-area"));
 
 // ─── Sidebar toggle (mobile) ──────────────────────────────────────────────────
 const sidebarToggle = document.getElementById("sidebar-toggle");
@@ -220,8 +234,12 @@ sidebarToggle?.addEventListener("click", () => {
 
 // ─── Logs Panel ───────────────────────────────────────────────────────────────
 logsToggle?.addEventListener("click", () => {
-    logsPanel.classList.toggle("open");
-    sidebar.classList.remove("open");
+    if (window.innerWidth <= 768) {
+        logsPanel.classList.toggle("open");
+        sidebar.classList.remove("open");
+    } else {
+        logsPanel.classList.toggle("closed");
+    }
 });
 
 // Setup Live Logs stream

@@ -27,7 +27,8 @@
     --font-serif: 'Spectral', Georgia, serif;
 
     /* ── Layout ────────────────────────────────────────────────────────────── */
-    --sidebar-w: 300px;
+    --sidebar-w: 250px;
+    --logs-w: 300px;
     --header-h: 48px;
 
     /* ── Animation ─────────────────────────────────────────────────────────── */
@@ -285,14 +286,26 @@ body.offline .offline-notice {
 
 /* ── Logs Panel ─────────────────────────────────────────────────────────────── */
 #logs-panel {
-    width: var(--sidebar-w);
+    width: var(--logs-w);
     flex-shrink: 0;
     border-left: 1px solid var(--border);
     background: var(--bg);
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: width 0.3s var(--ease-out);
+    transition: width 0.3s var(--ease-out), border-color 0.3s var(--ease-out);
+}
+
+@media (min-width: 769px) {
+    #logs-panel.closed {
+        width: 0;
+        border-left-color: transparent;
+    }
+
+    #logs-panel .logs-header,
+    #logs-panel #logs-content {
+        width: var(--logs-w);
+    }
 }
 
 .logs-header {
@@ -377,15 +390,16 @@ body.offline .offline-notice {
 /* ── Messages ────────────────────────────────────────────────────────────────── */
 .message {
     display: flex;
+    flex-direction: column;
     animation: slide-up 0.22s var(--ease-out) both;
 }
 
 .message.user {
-    justify-content: flex-end;
+    align-items: flex-end;
 }
 
 .message.assistant {
-    justify-content: flex-start;
+    align-items: flex-start;
 }
 
 @keyframes slide-up {
@@ -477,6 +491,40 @@ body.offline .offline-notice {
     40% {
         opacity: 1;
         transform: scale(1.15);
+    }
+}
+
+/* Inference metrics below message */
+.message-metrics {
+    display: flex;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    color: var(--text-faint);
+    margin-top: 6px;
+    padding-left: 4px;
+    animation: fade-in 0.3s ease-out both;
+}
+
+.message-metrics span::before {
+    content: "•";
+    margin-right: 6px;
+    color: rgba(0, 0, 0, 0.1);
+}
+
+.message-metrics span:first-child::before {
+    display: none;
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(-2px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 

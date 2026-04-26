@@ -11,7 +11,7 @@ DTYPE: str = "float16"
 
 # ── Inference defaults ────────────────────────────────────────────────────────
 TEMPERATURE: float = 0.7
-MAX_TOKENS: int = 512
+MAX_TOKENS: int = 1000
 TOP_P: float = 0.9
 
 # ── MongoDB ───────────────────────────────────────────────────────────────────
