@@ -126,3 +126,9 @@ async def generate_stream(prompt: str):
     }
 
     yield {"type": "metrics", "content": metrics, "full_text": full_output.strip()}
+
+
+
+# TODO: Work on a Vllm profiling function, Vllm upfronts totoal alloted GPU and manages its own paged table,so nvidia-smi is returning the same memory before or after genration.
+
+
