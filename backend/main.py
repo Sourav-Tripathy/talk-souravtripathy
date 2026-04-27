@@ -36,3 +36,6 @@ if __name__ == "__main__":
         reload=False,       # reload must be False — vLLM engine for some reason crashing on reload
         log_level="info",
     )
+
+
+# TODO: Think of a way in which model load to VRAM is done when servere starts but infreence engine comes from frontend configurable something like that..That means implementation of other inference methods like llama.cpp or direct transformer or Tensor RT or ONNX runtime or SGLang.
