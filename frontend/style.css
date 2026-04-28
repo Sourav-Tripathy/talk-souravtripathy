@@ -106,7 +106,7 @@ header {
 
 .site-title {
     font-family: var(--font-mono);
-    font-size: 0.85rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--text);
     letter-spacing: 0.02em;
@@ -166,6 +166,35 @@ header {
 .icon-btn:hover {
     color: var(--text);
     background: var(--bg-surface);
+}
+
+#new-chat-btn {
+    position: absolute;
+    left: var(--sidebar-w);
+    transform: translateX(-50%);
+    background: var(--bg-surface);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s, background 0.2s, transform 0.1s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    z-index: 30;
+}
+
+#new-chat-btn:hover {
+    color: var(--text);
+    background: var(--bg-raise);
+    border-color: rgba(60, 42, 33, 0.2);
+}
+
+#new-chat-btn:active {
+    transform: translateX(-50%) scale(0.95);
 }
 
 @keyframes pulse {
@@ -429,6 +458,7 @@ body.offline .offline-notice {
     border: 1px solid rgba(60, 42, 33, 0.12);
     border-bottom-right-radius: 2px;
     font-family: var(--font-mono);
+    white-space: pre-wrap;
 }
 
 .message.assistant .bubble {
@@ -438,6 +468,15 @@ body.offline .offline-notice {
     border-bottom-left-radius: 2px;
     font-family: var(--font-mono);
 }
+
+/* Markdown elements */
+.bubble p { margin: 0 0 10px 0; }
+.bubble p:last-child { margin-bottom: 0; }
+.bubble ul, .bubble ol { margin: 0 0 10px 0; padding-left: 20px; }
+.bubble ul:last-child, .bubble ol:last-child { margin-bottom: 0; }
+.bubble a { color: inherit; }
+.bubble strong { font-weight: bold; }
+.bubble em { font-style: italic; }
 
 /* Code blocks */
 .bubble pre {
@@ -605,6 +644,16 @@ body.offline .offline-notice {
 
 /* ── Responsive — mobile ─────────────────────────────────────────────────────── */
 @media (max-width: 768px) {
+    #new-chat-btn {
+        position: relative;
+        left: auto;
+        transform: none;
+        margin-left: auto;
+    }
+    #new-chat-btn:active {
+        transform: scale(0.95);
+    }
+
     #sidebar-toggle {
         display: flex;
     }

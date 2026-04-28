@@ -61,16 +61,11 @@ function renderMessage(role, text) {
     const bubble = document.createElement("div");
     bubble.className = "bubble";
 
-    // Light markdown: wrap code blocks in <pre><code>
-    const escaped = text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;");
-
-    bubble.innerHTML = escaped.replace(
-        /```([\s\S]*?)```/g,
-        (_, code) => `<pre><code>${code.trim()}</code></pre>`
-    );
+    if (role === "user") {
+        bubble.textContent = text;
+    } else {
+        bubble.innerHTML = window.marked ? window.marked.parse(text) : text;
+    }
 
     wrap.appendChild(bubble);
     chatLog.appendChild(wrap);
@@ -164,15 +159,7 @@ async function sendMessage() {
                             fullMarkdown += payload.content;
 
                             // Re-render the chat bubble markdown progressively
-                            const escaped = fullMarkdown
-                                .replace(/&/g, "&amp;")
-                                .replace(/</g, "&lt;")
-                                .replace(/>/g, "&gt;");
-
-                            bubble.innerHTML = escaped.replace(
-                                /```([\s\S]*?)```/g,
-                                (_, code) => `<pre><code>${code.trim()}</code></pre>`
-                            );
+                            bubble.innerHTML = window.marked ? window.marked.parse(fullMarkdown) : fullMarkdown;
                             chatLog.scrollTop = chatLog.scrollHeight;
                         } else if (payload.type === "metrics") {
                             updateMetrics(payload.content);
