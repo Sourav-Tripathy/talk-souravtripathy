@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-from services.vllm_client import generate_stream
+from services.client_manager import generate_stream, IS_CPU
 from services.mongo_service import save_turn
 from services.logger import log_inference
 import json
@@ -39,8 +39,10 @@ async def chat(req: ChatRequest):
                 metrics["elapsed_time"] = round(time.perf_counter() - start_time, 2)
                 yield f"data: {json.dumps(chunk)}\n\n"
 
-        # Persist asynchronously after generation completes
-        asyncio.create_task(save_turn(req.session_id, req.message, full_text))
+        # Persist asynchronously after generation completes (GPU mode only).
+        # In CPU mode, Mongo writes are disabled — plain inference only.
+        if not IS_CPU:
+            asyncio.create_task(save_turn(req.session_id, req.message, full_text))
         log_inference(req.message, full_text, metrics)
 
     return StreamingResponse(stream_generator(), media_type="text/event-stream")
