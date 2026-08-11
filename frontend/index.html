@@ -79,16 +79,34 @@
                 <div class="sidebar-block">
                     <p class="sidebar-label">what this is</p>
                     <p class="sidebar-prose">
-                        A language model running on an old NVIDIA GeForce GTX 1650 Ti 4GB GPU,
-                        somewhere on my desk.<br><br>
-                        It uses a FastAPI server and vLLM for inference.<br><br>
-                        That's it.
+                        A chat interface for running lightweight LLMs (up to 2B parameters) directly from my desk.
                     </p>
+                </div>
+
+                <div class="sidebar-block">
+                    <p class="sidebar-label">execution modes</p>
+                    <div class="runtime-modes">
+                        <div class="mode-badge cpu">
+                            <span class="mode-icon"></span>
+                            <div class="mode-details">
+                                <span class="mode-name">CPU Mode</span>
+                                <span class="mode-desc">Active when GPU is unavailable</span>
+                            </div>
+                        </div>
+                        <div class="mode-badge gpu">
+                            <span class="mode-icon"></span>
+                            <div class="mode-details">
+                                <span class="mode-name">GPU Mode</span>
+                                <span class="mode-desc">Local GTX 1650 Ti (4GB VRAM)</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <hr class="sidebar-divider" />
 
                 <div class="sidebar-block">
+                    <p class="sidebar-label">system stack</p>
                     <table class="spec-table" aria-label="Stack">
                         <tbody>
                             <tr>
@@ -101,11 +119,11 @@
                             </tr>
                             <tr>
                                 <td>serving</td>
-                                <td>vLLM + FastAPI</td>
+                                <td>vLLM / sglang / TRT-LLM</td>
                             </tr>
                             <tr>
-                                <td>frontend</td>
-                                <td>Cloudflare Pages</td>
+                                <td>backend</td>
+                                <td>FastAPI + PyTorch</td>
                             </tr>
                             <tr>
                                 <td>site</td>
@@ -156,7 +174,7 @@
             <!-- ── Logs Panel ─────────────────────────────────────────────────── -->
             <aside id="logs-panel" aria-label="Live logs">
                 <div class="logs-header">
-                    <span class="logs-title">System & vLLM Logs</span>
+                    <span class="logs-title">System Logs</span>
                 </div>
                 <div id="logs-content" role="log" aria-live="polite">
                     <div class="empty-state" id="logs-empty-state">

@@ -4,53 +4,14 @@ import time
 
 import torch
 from vllm import AsyncLLMEngine, AsyncEngineArgs, SamplingParams
+from utils.memory import MemoryTracker
+
 
 import config
 
 # ── Device mode ───────────────────────────────────────────────────────────────
 # Exported so routes can skip Mongo writes / adapt responses on CPU mode.
 IS_CPU: bool = config.IS_CPU
-
-
-# ── Memory stats helper ───────────────────────────────────────────────────────
-
-def _rss_mb() -> float:
-    """Return current process RSS in MB (reads /proc/self/status)."""
-    try:
-        with open("/proc/self/status", "r") as f:
-            for line in f:
-                if line.startswith("VmRSS:"):
-                    return float(line.split()[1]) / 1024.0
-    except Exception:
-        pass
-    return 0.0
-
-
-def print_memory_stats(label: str, func_name: str):
-    print("\n" + "=" * 60)
-    print(f"[{func_name}] -> {label}")
-    print("-" * 60)
-
-    # CPU / RAM
-    print(f"[CPU] Current RSS Memory: {_rss_mb():.2f} MB")
-
-    # GPU (only when CUDA is available)
-    if torch.cuda.is_available():
-        gpu_alloc = torch.cuda.memory_allocated() / (1024 * 1024)
-        gpu_res   = torch.cuda.memory_reserved()   / (1024 * 1024)
-        print(f"[GPU] Memory Allocated:   {gpu_alloc:.2f} MB")
-        print(f"[GPU] Memory Reserved:    {gpu_res:.2f} MB")
-        try:
-            free_mem, total_mem = torch.cuda.mem_get_info()
-            print(f"[GPU] Free Memory:        {free_mem / (1024*1024):.2f} MB")
-            print(f"[GPU] Total VRAM:         {total_mem / (1024*1024):.2f} MB")
-        except Exception:
-            pass
-    else:
-        print("[GPU] CUDA not available — running in CPU mode")
-
-    print("=" * 60 + "\n")
-
 
 # ── Engine args ───────────────────────────────────────────────────────────────
 
@@ -104,15 +65,14 @@ def init_engine():
     global engine
     if engine is not None:
         return
-
-    print_memory_stats("BEFORE Engine Initialization", "init_engine")
+    
     try:
-        engine = AsyncLLMEngine.from_engine_args(ENGINE_ARGS)
-        print_memory_stats("AFTER Engine Initialization (SUCCESS)", "init_engine")
+        with MemoryTracker("Engine Initialization", "init_engine"):
+            engine = AsyncLLMEngine.from_engine_args(ENGINE_ARGS)
     except Exception as e:
-        print_memory_stats("CRASH during Engine Initialization", "init_engine")
         print(f"Exception details: {e}")
         raise
+
 
 
 def get_engine() -> AsyncLLMEngine:
@@ -124,17 +84,6 @@ def get_engine() -> AsyncLLMEngine:
 # ── Streaming inference ───────────────────────────────────────────────────────
 
 async def generate_stream(prompt: str):
-    """
-    Run async generation via vLLM and stream tokens back.
-
-    Yields dicts:
-      • {"type": "token",   "content": <str>}
-      • {"type": "metrics", "content": <dict>, "full_text": <str>}
-
-    On CPU mode:
-      - VRAM fields are always 0 / N/A.
-      - RAM delta (RSS) is reported instead.
-    """
     if engine is None:
         raise RuntimeError("vLLM engine is not initialized. Call init_engine() first.")
 
@@ -145,89 +94,72 @@ async def generate_stream(prompt: str):
     )
 
     request_id = str(uuid.uuid4())
+    
+    tracker = MemoryTracker("text generation", "generate_stream")
+    
+    with tracker:
+        full_output = ""
+        last_output = None
+        last_flush_token_count = 0
+        step = 0
+        
+        async for output in engine.generate(prompt, sampling_params, request_id):
+            last_output = output
+            if output.outputs:
+                completion = output.outputs[0]
+                token_ids = completion.token_ids
+                latest_token_id = token_ids[-1] if token_ids else None
+                new_text = completion.text[len(full_output):]
+                
+                step += 1
+                if new_text:
+                    yield {"type": "token", "content": new_text}
+                    last_flush_token_count = len(token_ids)
+                
+                full_output = completion.text
 
-    t0 = time.perf_counter()
+        # Fetch completion metrics
+        elapsed = time.perf_counter() - tracker.start_time
+        vram_after = torch.cuda.memory_allocated() if not IS_CPU else 0
+        ram_after  = tracker.get_rss_mb() if IS_CPU else 0.0
 
-    # Capture baseline stats
-    vram_before = torch.cuda.memory_allocated() if not IS_CPU else 0
-    ram_before  = _rss_mb() if IS_CPU else 0.0
+        prompt_tokens  = len(last_output.prompt_token_ids) if last_output else len(prompt.split())
+        output_tokens  = (
+            len(last_output.outputs[0].token_ids)
+            if last_output and last_output.outputs
+            else len(full_output.split())
+        )
+        total_tokens = prompt_tokens + output_tokens
 
-    print_memory_stats("START of text generation", "generate_stream")
+        if IS_CPU:
+            metrics = {
+                "device":          "cpu",
+                "latency_ms":      round(elapsed * 1000, 2),
+                "ram_delta_mb":    round(ram_after - tracker.ram_before, 2),
+                "ram_used_mb":     round(ram_after, 2),
+                "vram_delta_mb":   0,
+                "vram_used_mb":    0,
+                "prompt_tokens":   prompt_tokens,
+                "output_tokens":   output_tokens,
+                "total_tokens":    total_tokens,
+                "tokens_per_second": round(output_tokens / elapsed, 2) if elapsed > 0 else 0,
+            }
+        else:
+            metrics = {
+                "device":          "gpu",
+                "latency_ms":      round(elapsed * 1000, 2),
+                "vram_delta_mb":   round((vram_after - tracker.vram_before) / 1e6, 2),
+                "vram_used_mb":    round(vram_after / 1e6, 2),
+                "ram_delta_mb":    0,
+                "ram_used_mb":     0,
+                "prompt_tokens":   prompt_tokens,
+                "output_tokens":   output_tokens,
+                "total_tokens":    total_tokens,
+                "tokens_per_second": round(output_tokens / elapsed, 2) if elapsed > 0 else 0,
+            }
 
-    full_output = ""
-    last_output = None
-    last_flush_token_count = 0
-    step = 0
-    async for output in engine.generate(prompt, sampling_params, request_id):
-        last_output = output
-        print("last_output: ", last_output)
-        if output.outputs:
-            completion = output.outputs[0]
-            token_ids = completion.token_ids
-            latest_token_id = token_ids[-1] if token_ids else None
-            new_text = completion.text[len(full_output):]
-            
-            step += 1
-            print(f"[vLLM Stream Step {step}] "
-                  f"Token count: {len(token_ids)}, "
-                  f"Latest Token ID: {latest_token_id}, "
-                  f"Streaming chunk: {repr(new_text)}")
-            print(f"vLLM completion object: {completion}")
-            
-            if new_text:
-                yield {"type": "token", "content": new_text}
-                len_diff = len(token_ids) - last_flush_token_count
-                print(f"[vLLM Stream Step {step} After Flush] Diff of token id list length: {len_diff}")
-                last_flush_token_count = len(token_ids)
-            
-            full_output = completion.text
+        yield {"type": "metrics", "content": metrics, "full_text": full_output.strip()}
 
-    elapsed = time.perf_counter() - t0
-
-    vram_after = torch.cuda.memory_allocated() if not IS_CPU else 0
-    ram_after  = _rss_mb() if IS_CPU else 0.0
-
-    print_memory_stats("END of text generation", "generate_stream")
-
-    prompt_tokens  = len(last_output.prompt_token_ids) if last_output else len(prompt.split())
-    output_tokens  = (
-        len(last_output.outputs[0].token_ids)
-        if last_output and last_output.outputs
-        else len(full_output.split())
-    )
-    total_tokens = prompt_tokens + output_tokens
-
-    if IS_CPU:
-        metrics = {
-            "device":          "cpu",
-            "latency_ms":      round(elapsed * 1000, 2),
-            # RAM stats instead of VRAM
-            "ram_delta_mb":    round(ram_after - ram_before, 2),
-            "ram_used_mb":     round(ram_after, 2),
-            # VRAM fields kept for API-schema compatibility — always 0 on CPU
-            "vram_delta_mb":   0,
-            "vram_used_mb":    0,
-            "prompt_tokens":   prompt_tokens,
-            "output_tokens":   output_tokens,
-            "total_tokens":    total_tokens,
-            "tokens_per_second": round(output_tokens / elapsed, 2) if elapsed > 0 else 0,
-        }
-    else:
-        metrics = {
-            "device":          "gpu",
-            "latency_ms":      round(elapsed * 1000, 2),
-            "vram_delta_mb":   round((vram_after - vram_before) / 1e6, 2),
-            "vram_used_mb":    round(vram_after / 1e6, 2),
-            # RAM field kept for API-schema compatibility — 0 on GPU path
-            "ram_delta_mb":    0,
-            "ram_used_mb":     0,
-            "prompt_tokens":   prompt_tokens,
-            "output_tokens":   output_tokens,
-            "total_tokens":    total_tokens,
-            "tokens_per_second": round(output_tokens / elapsed, 2) if elapsed > 0 else 0,
-        }
-
-    yield {"type": "metrics", "content": metrics, "full_text": full_output.strip()}
 
 
 # TODO: Work on a vLLM profiling function — vLLM upfronts total allotted GPU/CPU

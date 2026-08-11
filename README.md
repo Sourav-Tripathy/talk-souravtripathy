@@ -1,20 +1,22 @@
 # talk.souravtripathy.com
 
-This project is a personal endeavor to keep my old NVIDIA GeForce GTX 1650 Ti busy, since it sits idle most of the time in my laptop. It is an attempt to host a 500M parameter Qwen model via vLLM, wrapped in a FastAPI server. The frontend is written with the help of gemini 3.1 pro.
+This is a learning project created to keep old hardware busy (such as my laptop's idle NVIDIA GeForce GTX 1650 Ti) while learning and exploring all the inference engines available. 
 
-## Current Status
-The backend **works**,When the server is locally on and is served via Cloudflare Tunneling. The current memory footprint has about nearly 2 GiB for KV cache which is used by vLLM with paged attention and with a prefill of 2048 Tokens it can serve more than 50 concurrent calls of each 2048 tokens with a decent TPS .
+The project contains a lightweight static frontend and a backend exposing three endpoints:
+- `POST /chat`: Streams model responses using Server-Sent Events (SSE).
+- `GET /health`: Reports device and hardware system resource usage.
+- `GET /logs/stream`: Streams live backend inference logs directly to the frontend.
 
-The project is hosted live at [talk.souravtripathy.com](https://talk.souravtripathy.com).
+## Supported Inference Engines
+We support dynamic engine routing via the `ENGINE_TYPE` configuration. The engines are:
+1. **vLLM** (`vllm_client.py`): Efficient serving engine configuration supporting both GPU and CPU pathways.
+2. **SGLang** (`sglang.py`): Stub implementation for SGLang integration (to be completed).
+3. **TensorRT-LLM** (`tensorrt_llm.py`): Stub implementation for NVIDIA TensorRT-LLM optimization (to be completed).
+4. **Standard Transformer** (`transformer.py`): Stub implementation for a standard HuggingFace/PyTorch transformer runner (to be completed).
 
-## vLLM Configuration
-Because the GTX 1650 Ti has a Turing generation architecture (Compute Capability 7.5), it lacks support for certain modern optimized kernels like FlashAttention 2 or FlashInfer. The vLLM setup has been configured to work around these limitations:
-- **Attention Backend:** Enforced `TRITON_ATTN`. This prevents vLLM from attempting FlashInfer JIT compilation, which would otherwise require `nvcc` and cause crash failures during engine initialization.
-- **Enforce Eager:** `enforce_eager=True` is enabled to skip CUDA graph capture. This avoids the heavy VRAM allocation overhead during the profiling loop, which speeds up startup time and prevents instant OOMs on low-VRAM cards like the 4GB 1650 Ti.
-
-## Credits 
-- **[Qwen](https://github.com/QwenLM/Qwen)** - For their highly capable set of open-weight models, making the 500M model perform extraordinarily well on a local device.
-- **[vLLM](https://github.com/vllm-project/vllm)** - For an incredibly fast and efficient LLM serving framework.
+## Project Design
+- **Standard logger:** Structured inference metrics are logged to `logs/inference.log` and streamed to the frontend.
+- **vLLM low-VRAM optimizations:** Custom parameters like `attention_backend="TRITON_ATTN"` and `enforce_eager=True` are leveraged to run successfully on low-VRAM GPUs.
 
 ## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.

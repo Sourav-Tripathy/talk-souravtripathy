@@ -712,3 +712,150 @@ body.offline .offline-notice {
         max-width: 92%;
     }
 }
+
+/* ── Runtime Modes (Sidebar) ─────────────────────────────────────────────── */
+.runtime-modes {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.mode-badge {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.mode-badge:hover {
+    background: var(--bg-raise);
+    border-color: rgba(60, 42, 33, 0.2);
+}
+
+.mode-icon {
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    background: var(--bg-raise);
+    border-radius: 4px;
+}
+
+.mode-details {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.35;
+}
+
+.mode-name {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.mode-desc {
+    font-size: 0.62rem;
+    color: var(--text-muted);
+}
+
+/* ── Structured Logs Panel (Metrics Cards) ──────────────────────────────── */
+.log-card.metrics-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    transition: transform 0.2s, border-color 0.2s;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.01);
+}
+
+.log-card.metrics-card:hover {
+    border-color: rgba(60, 42, 33, 0.25);
+    transform: translateY(-1px);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed var(--border);
+    padding-bottom: 6px;
+}
+
+.card-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    letter-spacing: 0.04em;
+}
+
+.pulse-indicator {
+    width: 6px;
+    height: 6px;
+    background: #4bbb70;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 0 0 rgba(75, 187, 112, 0.4);
+    animation: log-pulse 2s infinite;
+}
+
+@keyframes log-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(75, 187, 112, 0.6);
+    }
+    70% {
+        box-shadow: 0 0 0 5px rgba(75, 187, 112, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(75, 187, 112, 0);
+    }
+}
+
+.card-time {
+    font-size: 0.62rem;
+    color: var(--text-faint);
+    font-family: var(--font-mono);
+}
+
+.card-metrics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    row-gap: 10px;
+    column-gap: 14px;
+}
+
+.metric-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.metric-label {
+    font-size: 0.6rem;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.metric-value {
+    font-size: 0.76rem;
+    color: var(--text);
+    font-weight: 700;
+    font-family: var(--font-mono);
+}
+
+.metric-value.highlight {
+    color: #4bbb70;
+}

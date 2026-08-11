@@ -238,17 +238,79 @@ logsSource.onmessage = (event) => {
     const logText = event.data;
     if (!logText) return;
 
-    const entry = document.createElement("div");
-    entry.className = "log-entry";
-    if (logText.toLowerCase().includes("error") || logText.toLowerCase().includes("exception")) {
-        entry.classList.add("error");
+    let cleanText = logText.trim();
+    let isMetricsLog = false;
+    let entry = document.createElement("div");
+
+    if (cleanText.startsWith("{") && cleanText.endsWith("}")) {
+        // Convert Python dictionary format to valid JSON string
+        let jsonStr = cleanText
+            .replace(/'/g, '"')
+            .replace(/:\s*True/g, ': true')
+            .replace(/:\s*False/g, ': false')
+            .replace(/:\s*None/g, ': null');
+        try {
+            const data = JSON.parse(jsonStr);
+            isMetricsLog = true;
+
+            const date = new Date(data.timestamp);
+            const formattedTime = isNaN(date.getTime())
+                ? data.timestamp
+                : date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+
+            const gpuUtil = data.gpu_util_percent === -1 ? 'N/A' : `${data.gpu_util_percent}%`;
+            const latency = data.latency_ms ? `${data.latency_ms.toFixed(0)} ms` : '—';
+            
+            entry.className = "log-card metrics-card";
+            entry.innerHTML = `
+                <div class="card-header">
+                    <span class="card-tag"><span class="pulse-indicator"></span>Inference Metrics</span>
+                    <span class="card-time">${formattedTime}</span>
+                </div>
+                <div class="card-metrics-grid">
+                    <div class="metric-item">
+                        <span class="metric-label">Latency</span>
+                        <span class="metric-value highlight">${latency}</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">Prompt Tokens</span>
+                        <span class="metric-value">${data.prompt_tokens ?? '—'}</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">RAM Used</span>
+                        <span class="metric-value">${data.ram_used_gb ? data.ram_used_gb + ' GB' : '—'}</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">VRAM Peak</span>
+                        <span class="metric-value">${data.vram_used_mb ? data.vram_used_mb + ' MB' : '—'}</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">VRAM Delta</span>
+                        <span class="metric-value">${data.vram_delta_mb ? data.vram_delta_mb + ' MB' : '—'}</span>
+                    </div>
+                    <div class="metric-item">
+                        <span class="metric-label">GPU Util</span>
+                        <span class="metric-value">${gpuUtil}</span>
+                    </div>
+                </div>
+            `;
+        } catch (e) {
+            isMetricsLog = false;
+        }
     }
-    entry.textContent = logText;
+
+    if (!isMetricsLog) {
+        entry.className = "log-entry";
+        if (logText.toLowerCase().includes("error") || logText.toLowerCase().includes("exception")) {
+            entry.classList.add("error");
+        }
+        entry.textContent = logText;
+    }
 
     logsContent.appendChild(entry);
 
     // Auto-scroll to bottom if near bottom
-    if (logsContent.scrollHeight - logsContent.scrollTop - logsContent.clientHeight < 100) {
+    if (logsContent.scrollHeight - logsContent.scrollTop - logsContent.clientHeight < 200) {
         logsContent.scrollTop = logsContent.scrollHeight;
     }
 };

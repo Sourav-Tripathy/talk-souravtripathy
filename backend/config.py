@@ -10,7 +10,7 @@ IS_CPU: bool = not torch.cuda.is_available()
 
 # ── Engine Selection ─────────────────────────────────────────────────────────
 ENGINE_TYPE: str = os.getenv("ENGINE_TYPE", "vllm").lower()
-if ENGINE_TYPE not in ("vllm", "sglang"):
+if ENGINE_TYPE not in ("vllm", "sglang", "tensorrt", "transformer"):
     ENGINE_TYPE = "vllm"
 
 # ── Model ─────────────────────────────────────────────────────────────────────
@@ -45,12 +45,6 @@ if IS_CPU:
 TEMPERATURE: float = 0.7
 MAX_TOKENS: int = 1000
 TOP_P: float = 0.9
-
-# ── MongoDB ───────────────────────────────────────────────────────────────────
-MONGODB_URI: str = os.getenv("MONGODB_URI", "")
-DB_NAME: str = "talk_sourav"
-COLLECTION_NAME: str = "conversations"
-
 # ── Server ────────────────────────────────────────────────────────────────────
 PORT: int = int(os.getenv("PORT", "5000"))
 ALLOWED_ORIGINS: list[str] = [
